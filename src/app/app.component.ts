@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { INSPECT_MAX_BYTES } from 'buffer';
+import { equal } from 'assert';
 
 class RandomNumber {
   static within(n: number): number {
@@ -12,6 +14,10 @@ class RandomNumber {
 })
 export class AppComponent implements OnInit {
   title = 'game';
+
+
+
+
   noOfRow = null;
   noOfCol = null;
   row = [];
@@ -22,145 +28,142 @@ export class AppComponent implements OnInit {
   yCenter = null;
   array2d: any;
 
-  horizontalLine = null;
+  // board dimentions horizontalLine for height and verticalLine for width
+  horizontalLine = [];
+  verticalLine = [];
+  height = null;
+  width = null;
+  // let xAxis and yAxis is the position of player
+  xAxis = null;
+  yAxis = null;
 
+  // 1d array of enemy position 
+  enemyPosition = [];
+  // 2d array of rendom position of enemy 
+  rendomPositionOfEnemy: any;
 
+  totalMove = 0;
   ngOnInit() {
 
     this.gethorizontalLine();
   }
 
   gethorizontalLine() {
-    this.noOfRow = prompt('enter the  no ROW');
-    if ((!isNaN(this.noOfRow) && (this.noOfRow > 0))) {
-      // tslint:disable-next-line: radix
-      this.row = Array(parseInt(this.noOfRow)).fill(1).map((x, i) => i);
-      if (this.noOfRow % 2 == 0) {
-        // tslint:disable-next-line: radix
-        this.yCenter = parseInt(this.noOfRow) / 2;
+    this.height = prompt('enter the height of board');
+
+    // check no is integer or not
+    if ((!isNaN(this.height) && (this.height > 0))) {
+      // no of row in board 
+      this.horizontalLine = Array(parseInt(this.height)).fill(1).map((x, i) => i);
+      // check the center point accourding to heigth
+      if (this.height % 2 == 0) {
+        this.yAxis = parseInt(this.height) / 2;
       } else {
-        // tslint:disable-next-line: radix
-        this.yCenter = (parseInt(this.noOfRow) - 1) / 2;
+        this.yAxis = (parseInt(this.height) - 1) / 2;
       }
-      // tslint:disable-next-line: radix
-      this.array2d = new Array(parseInt(this.noOfRow));
+      // create an  array of length equal to height of board enter by user
+      this.rendomPositionOfEnemy = new Array(parseInt(this.height));
 
 
-      this.getWidth();
+      this.getVerticalLine();
 
     } else {
-      alert('Please enter the a no ');
+      alert('Please enter the a +ve no greater then 0 ');
 
       this.gethorizontalLine();
     }
   }
-  getWidth() {
-    this.noOfCol = prompt('enter the no of  COl');
-    if ((!isNaN(this.noOfCol) && (this.noOfCol > 0))) {
-      // this.create2Darray(this.noOfRow, this.noOfCol);
+  getVerticalLine() {
+    this.width = prompt('enter the width of board');
+    if ((!isNaN(this.width) && (this.width > 0))) {
 
       // tslint:disable-next-line: radix
-      this.col = Array(parseInt(this.noOfCol)).fill(1).map((x, i) => i);
+      this.verticalLine = Array(parseInt(this.width)).fill(1).map((x, i) => i);
       // tslint:disable-next-line: radix
-      for (let z = 0; z < parseInt(this.noOfRow); z++) {
+      for (let z = 0; z < parseInt(this.height); z++) {
         // tslint:disable-next-line: radix
-        this.array2d[z] = new Array(parseInt(this.noOfCol));
+        this.rendomPositionOfEnemy[z] = new Array(parseInt(this.width));
 
       }
-      console.log(this.array2d);
-
-      if (parseInt(this.noOfCol) % 2 == 0) {
-        this.xCenter = parseInt(this.noOfCol) / 2;
+      if (parseInt(this.width) % 2 == 0) {
+        this.xAxis = parseInt(this.width) / 2;
       } else {
-        // tslint:disable-next-line: radix
-        this.xCenter = (parseInt(this.noOfCol) - 1) / 2;
+        this.xAxis = (parseInt(this.width) - 1) / 2;
       }
 
-      this.create2Darray();
+      this.setValueZero();
 
-      while (this.SpritesPosition.length < this.noOfRow) {
-        // tslint:disable-next-line: radix
-        if (!((this.SpritesPosition.length == this.yCenter) && (this.xCenter == this.within(parseInt(this.noOfCol))))) {
+      // max no of enemy is equal to height enter by user
+      while (this.enemyPosition.length < this.height) {
 
-          // tslint:disable-next-line: radix
-          this.SpritesPosition.push(this.within(parseInt(this.noOfCol)));
+        // check the rendom position of enemy is not the same as position of player
+        if (!((this.enemyPosition.length == this.yAxis) && (this.xAxis == this.within(parseInt(this.width))))) {
+
+          // position of enemy in 1d array
+          this.enemyPosition.push(this.within(parseInt(this.width)));
         }
       }
 
-      console.log(this.SpritesPosition);
-
-      this.SpritesPosition.forEach((ele, index) => {
-        this.array2d[index][ele] = 1;
+      // position of enemy in 2d array
+      this.enemyPosition.forEach((ele, index) => {
+        this.rendomPositionOfEnemy[index][ele] = 1;
       });
 
 
-      this.SpritesPositionCopy = this.SpritesPosition;
-      console.log(this.array2d);
-      console.log(this.yCenter + 'y  x ' + this.xCenter);
 
     } else {
-      console.log(this.noOfCol + ' else');
       alert('Please enter the a +ve no greater then 0 ');
 
-      this.getWidth();
+      this.getVerticalLine();
     }
   }
 
 
-
+  // generate rendom no less  then n
   within(n: number): number {
     return Math.floor(Math.random() * n);
   }
 
-  showStripe(i, j) {
-
-
-    // tslint:disable-next-line: triple-equals
-    if (this.array2d[i][j] == 1) {
-      return true;
-
-    } else {
-      return false;
-
-    }
-  }
-
-
-  findNextpoint() {
+  findNearestEnemy() {
+    // tslint:disable-next-line: prefer-const
     let distance = [];
-    this.array2d.forEach((element, index, arr) => {
+    this.rendomPositionOfEnemy.forEach((element, index) => {
       element.forEach((ele, ind) => {
         if (ele === 1) {
           // tslint:disable-next-line: max-line-length
-          distance.push({ ind1: index, ind2: ind, val: this.convertNegToPos(this.yCenter - index) + this.convertNegToPos(this.xCenter - ind) });
+          distance.push({ ind1: index, ind2: ind, val: this.convertNegToPos(this.yAxis - index) + this.convertNegToPos(this.xAxis - ind) });
           distance.sort((a, b) => {
             return a.val - b.val;
           });
-
-          // arr[index][ind] = 0;
         }
       });
-      // tslint:disable-next-line: no-bitwise
     });
-    console.log(distance);
-    console.log(' dist');
-
-    console.log(this.SpritesPosition);
-    console.log(' post');
 
     return distance[0];
   }
 
-  moveObject() {
-    const nxtPoint = this.findNextpoint();
-    this.array2d[nxtPoint.ind1][nxtPoint.ind2] = 0;
-    this.yCenter = nxtPoint.ind1;
-    this.xCenter = nxtPoint.ind2;
+  movePlayer() {
+    if (this.findNearestEnemy()) {
+      const nxtPoint = this.findNearestEnemy();
+      this.totalMove = this.totalMove + nxtPoint.val;
+      this.rendomPositionOfEnemy[nxtPoint.ind1][nxtPoint.ind2] = 0;
+
+
+      this.yAxis = nxtPoint.ind1;
+      this.xAxis = nxtPoint.ind2;
+      setTimeout(() => {
+
+        this.movePlayer();
+      }, 1000);
+    } else {
+      alert(' Game over Total Move to kill enemy is ' + this.totalMove);
+    }
+
 
 
   }
 
-
+  // convert -ve no into +ve no
   convertNegToPos(n) {
     if (n < 0) {
       n = n * (-1);
@@ -170,13 +173,12 @@ export class AppComponent implements OnInit {
   }
 
 
-
-  create2Darray() {
+  // set the value zero at every position 
+  setValueZero() {
     // tslint:disable-next-line: prefer-for-of
-    for (let i = 0; i < this.array2d.length; i++) {
-      for (let j = 0; j < this.array2d[i].length; j++) {
-        this.array2d[i][j] = 0;
-        // console.log(this.array2d[i][j] + i + '  ' + j);
+    for (let i = 0; i < this.rendomPositionOfEnemy.length; i++) {
+      for (let j = 0; j < this.rendomPositionOfEnemy[i].length; j++) {
+        this.rendomPositionOfEnemy[i][j] = 0;
 
       }
     }
